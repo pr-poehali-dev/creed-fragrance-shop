@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,32 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  description: string;
-  volume: string;
-  category: 'men' | 'women' | 'unisex';
-  collection: string;
-  inStock: boolean;
-  fullDescription: string;
-  notes: {
-    top: string[];
-    heart: string[];
-    base: string[];
-  };
-}
+import { Product, products } from '@/data/products';
 
 interface CartItem extends Product {
   quantity: number;
 }
 
-const Index = () => {
+interface IndexProps {
+  cart: CartItem[];
+  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
+  addToCart: (product: Product) => void;
+}
+
+const Index = ({ cart, setCart, addToCart }: IndexProps) => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('home');
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -52,7 +42,7 @@ const Index = () => {
     deliveryMethod: 'courier'
   });
 
-  const products: Product[] = [
+  const productsData = products;
     {
       id: 1,
       name: 'Aventus',
@@ -191,7 +181,7 @@ const Index = () => {
     }
   ];
 
-  const filteredProducts = products
+  const filteredProducts = productsData
     .filter(p => {
       const matchesCategory = filterCategory === 'all' || p.category === filterCategory;
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -204,18 +194,6 @@ const Index = () => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
     });
-
-  const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
-  };
 
   const removeFromCart = (productId: number) => {
     setCart(prevCart => prevCart.filter(item => item.id !== productId));
@@ -404,15 +382,15 @@ const Index = () => {
                   <p className="text-muted-foreground">Культовые композиции от легендарного дома</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  {products.slice(0, 4).map(product => (
+                  {productsData.slice(0, 4).map(product => (
                     <Card 
                       key={product.id} 
                       className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 border-gray-200 hover:border-black overflow-hidden"
+                      onClick={() => navigate(`/product/${product.id}`)}
                     >
                       <CardContent className="p-0">
                         <div 
                           className="aspect-square overflow-hidden bg-gray-50"
-                          onClick={() => setSelectedProduct(product)}
                         >
                           <img
                             src={product.image}
@@ -425,8 +403,7 @@ const Index = () => {
                             {product.category === 'men' ? 'ДЛЯ НЕГО' : product.category === 'women' ? 'ДЛЯ НЕЁ' : 'УНИСЕКС'}
                           </Badge>
                           <h4 
-                            className="font-serif text-xl font-bold mb-2 cursor-pointer hover:opacity-60 transition-opacity"
-                            onClick={() => setSelectedProduct(product)}
+                            className="font-serif text-xl font-bold mb-2 hover:opacity-60 transition-opacity"
                           >
                             {product.name}
                           </h4>
@@ -434,7 +411,10 @@ const Index = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-xl font-bold">{product.price.toLocaleString()} ₽</span>
                             <Button
-                              onClick={() => addToCart(product)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                              }}
                               className="bg-black text-white hover:bg-gray-800"
                               disabled={!product.inStock}
                             >
@@ -531,11 +511,11 @@ const Index = () => {
                     <Card 
                       key={product.id} 
                       className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 border-gray-200 hover:border-black overflow-hidden bg-white"
+                      onClick={() => navigate(`/product/${product.id}`)}
                     >
                       <CardContent className="p-0">
                         <div 
                           className="aspect-square overflow-hidden bg-gray-100 relative"
-                          onClick={() => setSelectedProduct(product)}
                         >
                           <img
                             src={product.image}
@@ -558,8 +538,7 @@ const Index = () => {
                             </Badge>
                           </div>
                           <h4 
-                            className="font-serif text-lg font-bold mb-1 cursor-pointer hover:opacity-60 transition-opacity"
-                            onClick={() => setSelectedProduct(product)}
+                            className="font-serif text-lg font-bold mb-1 hover:opacity-60 transition-opacity"
                           >
                             {product.name}
                           </h4>
@@ -568,7 +547,10 @@ const Index = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-xl font-bold">{product.price.toLocaleString()} ₽</span>
                             <Button
-                              onClick={() => addToCart(product)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                              }}
                               className="bg-black text-white hover:bg-gray-800"
                               size="sm"
                               disabled={!product.inStock}
