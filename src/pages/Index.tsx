@@ -4,6 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
 
 interface Product {
@@ -13,6 +17,12 @@ interface Product {
   image: string;
   description: string;
   volume: string;
+  fullDescription: string;
+  notes: {
+    top: string[];
+    heart: string[];
+    base: string[];
+  };
 }
 
 interface CartItem extends Product {
@@ -23,6 +33,18 @@ const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [orderForm, setOrderForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    comment: '',
+    deliveryMethod: 'courier'
+  });
 
   const products: Product[] = [
     {
@@ -31,7 +53,13 @@ const Index = () => {
       price: 35000,
       image: 'https://cdn.poehali.dev/projects/c8967640-190e-49be-9740-62d8a3b5e331/files/4827fc83-00ee-4683-b72d-22959118f3d9.jpg',
       description: 'Легендарный аромат силы и успеха',
-      volume: '100 мл'
+      volume: '100 мл',
+      fullDescription: 'Aventus — это воплощение силы, успеха и стремления к совершенству. Созданный в 2010 году, этот культовый аромат быстро завоевал статус легенды в мире парфюмерии. Aventus сочетает в себе дерзость и утонченность, создавая неповторимый образ современного успешного человека.',
+      notes: {
+        top: ['Ананас', 'Бергамот', 'Черная смородина', 'Яблоко'],
+        heart: ['Роза', 'Береза', 'Жасмин', 'Пачули'],
+        base: ['Мускус', 'Дубовый мох', 'Амбра', 'Ваниль']
+      }
     },
     {
       id: 2,
@@ -39,7 +67,13 @@ const Index = () => {
       price: 32000,
       image: 'https://cdn.poehali.dev/projects/c8967640-190e-49be-9740-62d8a3b5e331/files/78b5e02e-db2a-4960-b361-0d5314d7ffe6.jpg',
       description: 'Свежесть горных вершин',
-      volume: '100 мл'
+      volume: '100 мл',
+      fullDescription: 'Silver Mountain Water воплощает чистоту и свежесть горных ручьёв. Этот аромат создан для тех, кто ценит природную красоту и стремится к гармонии. Свежие цитрусовые ноты в сочетании с чайными аккордами создают ощущение прохлады альпийских вершин.',
+      notes: {
+        top: ['Бергамот', 'Мандарин', 'Нероли'],
+        heart: ['Зелёный чай', 'Чёрная смородина', 'Сандал'],
+        base: ['Мускус', 'Древесные ноты', 'Петигрейн']
+      }
     },
     {
       id: 3,
@@ -47,7 +81,13 @@ const Index = () => {
       price: 33000,
       image: 'https://cdn.poehali.dev/projects/c8967640-190e-49be-9740-62d8a3b5e331/files/b8a372b2-9fa4-43af-9d71-daff420f7920.jpg',
       description: 'Классическая элегантность',
-      volume: '100 мл'
+      volume: '100 мл',
+      fullDescription: 'Green Irish Tweed — классический аромат, созданный в 1985 году для актёра Кэри Гранта. Этот парфюм олицетворяет элегантность и аристократизм. Свежие зелёные ноты в сочетании с древесными аккордами создают образ настоящего джентльмена.',
+      notes: {
+        top: ['Лимон', 'Вербена', 'Мята'],
+        heart: ['Фиалка', 'Ирис', 'Сандал'],
+        base: ['Амбра', 'Древесные ноты', 'Мускус']
+      }
     },
     {
       id: 4,
@@ -55,7 +95,13 @@ const Index = () => {
       price: 34000,
       image: 'https://cdn.poehali.dev/projects/c8967640-190e-49be-9740-62d8a3b5e331/files/4827fc83-00ee-4683-b72d-22959118f3d9.jpg',
       description: 'Морская свежесть и роскошь',
-      volume: '100 мл'
+      volume: '100 мл',
+      fullDescription: 'Millésime Impérial воплощает дух роскоши и свободы. Созданный для тех, кто ценит морскую свежесть и элегантность, этот аромат переносит вас на борт роскошной яхты. Солёные морские ноты в сочетании с цитрусовыми создают ощущение бесконечной свободы.',
+      notes: {
+        top: ['Морская соль', 'Бергамот', 'Мандарин', 'Лимон'],
+        heart: ['Ирис', 'Фрукты', 'Море'],
+        base: ['Мускус', 'Древесные ноты', 'Амбра']
+      }
     },
   ];
 
@@ -196,7 +242,10 @@ const Index = () => {
                           <span>Итого:</span>
                           <span>{totalPrice.toLocaleString()} ₽</span>
                         </div>
-                        <Button className="w-full bg-black text-white hover:bg-black/90">
+                        <Button 
+                          className="w-full bg-black text-white hover:bg-black/90"
+                          onClick={() => setIsCheckoutOpen(true)}
+                        >
                           Оформить заказ
                         </Button>
                       </div>
@@ -262,7 +311,10 @@ const Index = () => {
                 {products.slice(0, 4).map(product => (
                   <Card key={product.id} className="group cursor-pointer hover:shadow-xl transition-shadow border-black">
                     <CardContent className="p-0">
-                      <div className="aspect-square overflow-hidden">
+                      <div 
+                        className="aspect-square overflow-hidden"
+                        onClick={() => setSelectedProduct(product)}
+                      >
                         <img
                           src={product.image}
                           alt={product.name}
@@ -270,7 +322,12 @@ const Index = () => {
                         />
                       </div>
                       <div className="p-6">
-                        <h4 className="font-serif text-xl font-semibold mb-2">{product.name}</h4>
+                        <h4 
+                          className="font-serif text-xl font-semibold mb-2 cursor-pointer hover:opacity-60"
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          {product.name}
+                        </h4>
                         <p className="text-sm text-muted-foreground mb-4">{product.description}</p>
                         <div className="flex items-center justify-between">
                           <span className="text-lg font-semibold">{product.price.toLocaleString()} ₽</span>
@@ -297,7 +354,10 @@ const Index = () => {
               {products.map(product => (
                 <Card key={product.id} className="group cursor-pointer hover:shadow-xl transition-shadow border-black">
                   <CardContent className="p-0">
-                    <div className="aspect-square overflow-hidden">
+                    <div 
+                      className="aspect-square overflow-hidden"
+                      onClick={() => setSelectedProduct(product)}
+                    >
                       <img
                         src={product.image}
                         alt={product.name}
@@ -305,7 +365,12 @@ const Index = () => {
                       />
                     </div>
                     <div className="p-6">
-                      <h4 className="font-serif text-xl font-semibold mb-2">{product.name}</h4>
+                      <h4 
+                        className="font-serif text-xl font-semibold mb-2 cursor-pointer hover:opacity-60"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        {product.name}
+                      </h4>
                       <p className="text-sm text-muted-foreground mb-1">{product.description}</p>
                       <p className="text-xs text-muted-foreground mb-4">{product.volume}</p>
                       <div className="flex items-center justify-between">
@@ -505,6 +570,261 @@ const Index = () => {
           </div>
         )}
       </main>
+
+      <Dialog open={selectedProduct !== null} onOpenChange={() => setSelectedProduct(null)}>
+        <DialogContent className="max-w-4xl bg-white max-h-[90vh] overflow-y-auto">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-serif text-3xl">{selectedProduct.name}</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">{selectedProduct.volume}</p>
+                    <p className="text-3xl font-bold">{selectedProduct.price.toLocaleString()} ₽</p>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {selectedProduct.fullDescription}
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-serif font-semibold mb-2">Верхние ноты</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.notes.top.map(note => (
+                          <Badge key={note} variant="outline" className="border-black">
+                            {note}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-serif font-semibold mb-2">Ноты сердца</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.notes.heart.map(note => (
+                          <Badge key={note} variant="outline" className="border-black">
+                            {note}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-serif font-semibold mb-2">Базовые ноты</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.notes.base.map(note => (
+                          <Badge key={note} variant="outline" className="border-black">
+                            {note}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      addToCart(selectedProduct);
+                      setSelectedProduct(null);
+                    }}
+                    className="w-full bg-black text-white hover:bg-black/90"
+                  >
+                    Добавить в корзину
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <DialogContent className="max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-3xl">Оформление заказа</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-6">
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl font-semibold">Контактные данные</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Имя и фамилия *</Label>
+                  <Input
+                    id="name"
+                    value={orderForm.name}
+                    onChange={(e) => setOrderForm({...orderForm, name: e.target.value})}
+                    className="border-black"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="phone">Телефон *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={orderForm.phone}
+                      onChange={(e) => setOrderForm({...orderForm, phone: e.target.value})}
+                      className="border-black"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={orderForm.email}
+                      onChange={(e) => setOrderForm({...orderForm, email: e.target.value})}
+                      className="border-black"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-serif text-xl font-semibold">Доставка</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label>Способ доставки</Label>
+                  <div className="grid grid-cols-1 gap-3 mt-2">
+                    <Card 
+                      className={`cursor-pointer transition-all ${
+                        orderForm.deliveryMethod === 'courier' 
+                          ? 'border-black border-2' 
+                          : 'border-gray-300'
+                      }`}
+                      onClick={() => setOrderForm({...orderForm, deliveryMethod: 'courier'})}
+                    >
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <Icon name="Truck" size={24} />
+                        <div>
+                          <p className="font-semibold">Курьерская доставка</p>
+                          <p className="text-sm text-muted-foreground">По Москве — бесплатно от 20 000 ₽</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card 
+                      className={`cursor-pointer transition-all ${
+                        orderForm.deliveryMethod === 'pickup' 
+                          ? 'border-black border-2' 
+                          : 'border-gray-300'
+                      }`}
+                      onClick={() => setOrderForm({...orderForm, deliveryMethod: 'pickup'})}
+                    >
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <Icon name="MapPin" size={24} />
+                        <div>
+                          <p className="font-semibold">Самовывоз</p>
+                          <p className="text-sm text-muted-foreground">Из шоу-рума в Москве</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card 
+                      className={`cursor-pointer transition-all ${
+                        orderForm.deliveryMethod === 'cdek' 
+                          ? 'border-black border-2' 
+                          : 'border-gray-300'
+                      }`}
+                      onClick={() => setOrderForm({...orderForm, deliveryMethod: 'cdek'})}
+                    >
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <Icon name="Package" size={24} />
+                        <div>
+                          <p className="font-semibold">CDEK / Boxberry</p>
+                          <p className="text-sm text-muted-foreground">Доставка по России</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {orderForm.deliveryMethod !== 'pickup' && (
+                  <>
+                    <div>
+                      <Label htmlFor="city">Город *</Label>
+                      <Input
+                        id="city"
+                        value={orderForm.city}
+                        onChange={(e) => setOrderForm({...orderForm, city: e.target.value})}
+                        className="border-black"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Адрес доставки *</Label>
+                      <Input
+                        id="address"
+                        value={orderForm.address}
+                        onChange={(e) => setOrderForm({...orderForm, address: e.target.value})}
+                        className="border-black"
+                        placeholder="Улица, дом, квартира"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Индекс</Label>
+                      <Input
+                        id="postalCode"
+                        value={orderForm.postalCode}
+                        onChange={(e) => setOrderForm({...orderForm, postalCode: e.target.value})}
+                        className="border-black"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <Label htmlFor="comment">Комментарий к заказу</Label>
+                  <Textarea
+                    id="comment"
+                    value={orderForm.comment}
+                    onChange={(e) => setOrderForm({...orderForm, comment: e.target.value})}
+                    className="border-black"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="space-y-2 mb-4">
+                {cart.map(item => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span>{item.name} × {item.quantity}</span>
+                    <span>{(item.price * item.quantity).toLocaleString()} ₽</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-xl font-bold mb-6">
+                <span>Итого:</span>
+                <span>{totalPrice.toLocaleString()} ₽</span>
+              </div>
+              <Button 
+                className="w-full bg-black text-white hover:bg-black/90"
+                onClick={() => {
+                  alert('Спасибо за заказ! Наш менеджер свяжется с вами в ближайшее время.');
+                  setIsCheckoutOpen(false);
+                  setCart([]);
+                  setOrderForm({
+                    name: '',
+                    phone: '',
+                    email: '',
+                    address: '',
+                    city: '',
+                    postalCode: '',
+                    comment: '',
+                    deliveryMethod: 'courier'
+                  });
+                }}
+              >
+                Подтвердить заказ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <footer className="bg-black text-white py-12 mt-20">
         <div className="container mx-auto px-4">
